@@ -2836,7 +2836,6 @@ void process_command_ascii(conn *c, char *command) {
         }
     } else if (first == 'i') {
         if (strcmp(tokens[COMMAND_TOKEN].value, "incr") == 0) {
-            fprintf(stderr, "Detecting INCR as input\n");
             WANT_TOKENS_OR(ntokens, 4, 5);
             process_arithmetic_command(c, tokens, ntokens, INCR);
         } else {
@@ -2844,7 +2843,6 @@ void process_command_ascii(conn *c, char *command) {
         }
     } else if (first == 'm') {
         if (strcmp(tokens[COMMAND_TOKEN].value, "mult") == 0) {
-                fprintf(stderr, "Detecting MULT as input\n");
                 WANT_TOKENS_OR(ntokens, 4, 5);
                 process_arithmetic_command(c, tokens, ntokens, MULT);
             } else {
@@ -2856,11 +2854,9 @@ void process_command_ascii(conn *c, char *command) {
             WANT_TOKENS(ntokens, 3, 5);
             process_delete_command(c, tokens, ntokens);
         } else if (strcmp(tokens[COMMAND_TOKEN].value, "div") == 0) {
-            fprintf(stderr, "Detecting DIV as input\n");
             WANT_TOKENS_OR(ntokens, 4, 5);
             process_arithmetic_command(c, tokens, ntokens, DIV);
         } else if (strcmp(tokens[COMMAND_TOKEN].value, "decr") == 0) {
-            fprintf(stderr, "Detecting DECR as input\n");
             WANT_TOKENS_OR(ntokens, 4, 5);
             process_arithmetic_command(c, tokens, ntokens, DECR);
 #ifdef MEMCACHED_DEBUG
