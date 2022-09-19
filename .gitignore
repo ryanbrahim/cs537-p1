@@ -1,0 +1,14 @@
+*.o
+*.gcno
+*.Po
+.deps/
+
+memcached
+memcached-debug
+sizes
+testapp
+timedrun
+config.h
+config.log
+config.status
+stamp-h1
