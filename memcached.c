@@ -2245,8 +2245,7 @@ enum delta_result_type do_add_delta(conn *c, const char *key, const size_t nkey,
     int res;
     item *it;
 
-    printf("Delta-ing something!");
-    out_string(c, "Delta-ing something!");
+    fprintf(stderr, "Delta-ing something!\n");
 
     it = do_item_get(key, nkey, hv, c, DONT_UPDATE);
     if (!it) {
@@ -2276,17 +2275,15 @@ enum delta_result_type do_add_delta(conn *c, const char *key, const size_t nkey,
         return NON_NUMERIC;
     }
 
-    out_string(c, "Entering swtich!");
+    fprintf(stderr, "Entering switch with op %d\n", op);
     switch (op) {
         case INCR:
-            printf("Incrementing!");
-            out_string(c, "Incrementing!");
+            fprintf(stderr, "Incrementing!\n");
             value += delta;
             MEMCACHED_COMMAND_INCR(c->sfd, ITEM_key(it), it->nkey, value);
             break;
         case DECR:
-            printf("Decrementing!");
-            out_string(c, "Decrementing!");
+            fprintf(stderr, "Decrementing!\n");
             if(delta > value)
                 value = 0;
             else
@@ -2294,16 +2291,15 @@ enum delta_result_type do_add_delta(conn *c, const char *key, const size_t nkey,
             MEMCACHED_COMMAND_DECR(c->sfd, ITEM_key(it), it->nkey, value);
             break;
         case MULT:
-            printf("Multiplying!");
-            out_string(c, "Multiplying!");
+            fprintf(stderr, "Multiplying!\n");
             value *= delta;
             break;
         case DIV:
-            printf("Dividing!");
-            out_string(c, "Dividing!");
+            fprintf(stderr, "Dividing!\n");
             value /= delta;
             break;
     }
+    fprintf(stderr, "\n");
 
     pthread_mutex_lock(&c->thread->stats.mutex);
     switch (op) {
