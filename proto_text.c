@@ -1797,8 +1797,7 @@ static void process_marithmetic_command(conn *c, token_t *tokens, const size_t n
             switch (op) {
                 case INCR: c->thread->stats.incr_misses++; break;
                 case DECR: c->thread->stats.decr_misses++; break;
-                case MULT: c->thread->stats.mult_misses++; break;
-                case DIV: c->thread->stats.div_misses++; break;
+                default: break;
             }
             pthread_mutex_unlock(&c->thread->stats.mutex);
             // won't have a valid it here.
@@ -2102,8 +2101,7 @@ static void process_arithmetic_command(conn *c, token_t *tokens, const size_t nt
         switch (op) {
             case INCR: c->thread->stats.incr_misses++; break;
             case DECR: c->thread->stats.decr_misses++; break;
-            case MULT: c->thread->stats.mult_misses++; break;
-            case DIV: c->thread->stats.div_misses++; break;
+            default: break;
         }
 
         pthread_mutex_unlock(&c->thread->stats.mutex);
