@@ -1835,6 +1835,10 @@ void server_stats(ADD_STAT add_stats, conn *c) {
     APPEND_STAT("incr_hits", "%llu", (unsigned long long)slab_stats.incr_hits);
     APPEND_STAT("decr_misses", "%llu", (unsigned long long)thread_stats.decr_misses);
     APPEND_STAT("decr_hits", "%llu", (unsigned long long)slab_stats.decr_hits);
+    APPEND_STAT("mult_hits", "%llu", (unsigned long long)slab_stats.mult_hits);
+    APPEND_STAT("mult_misses", "%llu", (unsigned long long)thread_stats.mult_misses);
+    APPEND_STAT("div_hits", "%llu", (unsigned long long)slab_stats.div_hits);
+    APPEND_STAT("div_misses", "%llu", (unsigned long long)thread_stats.div_misses);
     APPEND_STAT("cas_misses", "%llu", (unsigned long long)thread_stats.cas_misses);
     APPEND_STAT("cas_hits", "%llu", (unsigned long long)slab_stats.cas_hits);
     APPEND_STAT("cas_badval", "%llu", (unsigned long long)slab_stats.cas_badval);
@@ -2232,7 +2236,7 @@ item* limited_get_locked(char *key, size_t nkey, conn *c, bool do_update, uint32
  * returns a response string to send back to the client.
  */
 enum delta_result_type do_add_delta(conn *c, const char *key, const size_t nkey,
-                                    const bool incr, const int64_t delta,
+                                    const arith_type op, const int64_t delta,
                                     char *buf, uint64_t *cas,
                                     const uint32_t hv,
                                     item **it_ret) {
@@ -2240,6 +2244,9 @@ enum delta_result_type do_add_delta(conn *c, const char *key, const size_t nkey,
     uint64_t value;
     int res;
     item *it;
+
+    printf("Delta-ing something!");
+    out_string(c, "Delta-ing something!");
 
     it = do_item_get(key, nkey, hv, c, DONT_UPDATE);
     if (!it) {
@@ -2269,24 +2276,43 @@ enum delta_result_type do_add_delta(conn *c, const char *key, const size_t nkey,
         return NON_NUMERIC;
     }
 
-    if (incr) {
-        value += delta;
-        MEMCACHED_COMMAND_INCR(c->sfd, ITEM_key(it), it->nkey, value);
-    } else {
-        if(delta > value) {
-            value = 0;
-        } else {
-            value -= delta;
-        }
-        MEMCACHED_COMMAND_DECR(c->sfd, ITEM_key(it), it->nkey, value);
+    out_string(c, "Entering swtich!");
+    switch (op) {
+        case INCR:
+            printf("Incrementing!");
+            out_string(c, "Incrementing!");
+            value += delta;
+            MEMCACHED_COMMAND_INCR(c->sfd, ITEM_key(it), it->nkey, value);
+            break;
+        case DECR:
+            printf("Decrementing!");
+            out_string(c, "Decrementing!");
+            if(delta > value)
+                value = 0;
+            else
+                value -= delta;
+            MEMCACHED_COMMAND_DECR(c->sfd, ITEM_key(it), it->nkey, value);
+            break;
+        case MULT:
+            printf("Multiplying!");
+            out_string(c, "Multiplying!");
+            value *= delta;
+            break;
+        case DIV:
+            printf("Dividing!");
+            out_string(c, "Dividing!");
+            value /= delta;
+            break;
     }
 
     pthread_mutex_lock(&c->thread->stats.mutex);
-    if (incr) {
-        c->thread->stats.slab_stats[ITEM_clsid(it)].incr_hits++;
-    } else {
-        c->thread->stats.slab_stats[ITEM_clsid(it)].decr_hits++;
+    switch (op) {
+        case INCR: c->thread->stats.slab_stats[ITEM_clsid(it)].incr_hits++; break;
+        case DECR: c->thread->stats.slab_stats[ITEM_clsid(it)].decr_hits++; break;
+        case MULT: c->thread->stats.slab_stats[ITEM_clsid(it)].mult_hits++; break;
+        case DIV: c->thread->stats.slab_stats[ITEM_clsid(it)].div_hits++; break;
     }
+
     pthread_mutex_unlock(&c->thread->stats.mutex);
 
     itoa_u64(value, buf);
@@ -2303,6 +2329,7 @@ enum delta_result_type do_add_delta(conn *c, const char *key, const size_t nkey,
         item_stats_sizes_remove(it);
         ITEM_set_cas(it, (settings.use_cas) ? get_cas_id() : 0);
         item_stats_sizes_add(it);
+        // NOTE: these lines are what updates the value in the database!
         memcpy(ITEM_data(it), buf, res);
         memset(ITEM_data(it) + res, ' ', it->nbytes - res - 2);
         do_item_update(it);
