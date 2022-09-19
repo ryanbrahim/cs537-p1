@@ -3,6 +3,7 @@
 *.Po
 .deps/
 
+
 memcached
 memcached-debug
 sizes
@@ -12,3 +13,7 @@ config.h
 config.log
 config.status
 stamp-h1
+autom4te.cache/
+doc/
+Makefile
+configure~
